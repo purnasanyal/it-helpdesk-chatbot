@@ -40,7 +40,7 @@ If you already have AWS Account and AWS user, please ensure that the user has ad
   - lex\_bot
   - lex\_custom\_resource
   - twilio-webhook-lambda
-- Copy CloudFormation template “WhatsApp.yaml” in the S3 bucket
+- Copy CloudFormation template “IThelpdesk.yaml” in the S3 bucket
 
 6. ### Launch a new CloudFormation stack in us-east-1 region
 
@@ -50,7 +50,7 @@ Click “Launch Stack” Button and deploy the application:
 
 ![image](https://user-images.githubusercontent.com/40875938/133193922-9d5fc723-e8ea-40ea-b3c3-ad5170fcad3c.png)
 
-- Click “Template is ready” and “Amazon S3 URL”. Provide Amazon S3 URL path of  iThelpdesk.yaml template
+- Click “Template is ready” and “Amazon S3 URL”. Provide Amazon S3 URL path of  IThelpdesk.yaml template
 - Provide a stack name e.g. “ps-twilio”
 - Replace the “S3BucketName” parameters with the S3 bucket you created in step 5. Leave other parameter value as the default value and create CloudFormation stack.
 - The stack creation may take up to 10 min
