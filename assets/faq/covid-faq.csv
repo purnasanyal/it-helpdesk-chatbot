@@ -1,0 +1,19 @@
+Question, Answer, URL
+What is the address of the medical center?,"1234 Cottleroad St. San Jose, CA 95136",<document url>
+Where is the medical center?,"1234 Cottleroad St. San Jose, CA 95136",<document url>
+How long does it take to get the vaccine?,30 minutes to 1 hour,<document url>
+When is medical center open for vaccination?,9 AM - 5 PM (PDT),<document url>
+When is the medical center open?,We're open on Mondays to Fridays at 9 AM - 5 PM (PDT),<document url>
+Are you open on the weekend?,"No, we are open on Mondays to Fridays.",<document url>
+Is the medical center open on the weekend?,"No, we are open on Mondays to Fridays.",<document url>
+What covid vaccines are available?,Moderna and Pfizer,<document url>
+What covid vaccines do you have?,Moderna and Pfizer,<document url>
+Do you have the Johnson and Johnson vaccine?,"No, we do not administer the J&J vaccine at this time.",<document url>
+Is the Johnson and Johnson vaccine available?,"No, we do not administer the J&J vaccine at this time.",<document url>
+Can I drive immediately after taking the vaccine?,Please wait 15 minutes after receiving the vaccination before driving.,<document url>
+Can I exercise after taking the vaccine?,"No, please wait a full day after receiving the vaccination before exercising.",<document url>
+What documents do I need to provide to get the vaccine?,"Vaccination appointment confirmation, state issued driver's license, and insurance card.",<document url>
+"I do not have insurance, can I still get vaccinated?","Yes, bring one of the following ID cards: driver's license, residence card, or passport",<document url>
+Can I do a walk-in vaccination?,"No, at this time please register at www.myvaccinetest.com",<document url>
+Do I need to receive my second dose of vaccine in the same medical center?,"Yes, we will notify you on when you can schedule the second dose of vaccine at the medical center.",<document url>
+When can I get my second dose of vaccine?,After 4 weeks of your first dose of the vaccine. ,<document url>

@@ -1,0 +1,477 @@
+{
+  "metadata": {
+    "schemaVersion": "1.0",
+    "importType": "LEX",
+    "importFormat": "JSON"
+  },
+  "resource": {
+    "name": "LexKendraFAQBot",
+    "version": "1",
+    "intents": [
+      {
+        "name": "AgentTransfer",
+        "version": "9",
+        "fulfillmentActivity": {
+          "codeHook": {
+            "uri": "arn:aws:lambda:us-west-2:673671831874:function:LexMakeAppointmentCodeHook",
+            "messageVersion": "1.0"
+          },
+          "type": "CodeHook"
+        },
+        "sampleUtterances": [
+          "Transfer me to an agent",
+          "Transfer to representative",
+          "Transfer to rep",
+          "connect with agent",
+          "connect with representative",
+          "talk to an agent",
+          "talk to representative"
+        ],
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-west-2:673671831874:function:LexMakeAppointmentCodeHook",
+          "messageVersion": "1.0"
+        },
+        "conclusionStatement": {
+          "messages": [
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "Thank you, an agent will connect with you shortly! Please hold."
+            }
+          ]
+        },
+        "inputContexts": [],
+        "outputContexts": []
+      },
+      {
+        "description": "Intent to book a vaccination appointment",
+        "rejectionStatement": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "Okay, I will not schedule an appointment {FullName}."
+            }
+          ]
+        },
+        "name": "MakeAppointment",
+        "version": "21",
+        "fulfillmentActivity": {
+          "codeHook": {
+            "uri": "arn:aws:lambda:us-west-2:673671831874:function:LexMakeAppointmentCodeHook",
+            "messageVersion": "1.0"
+          },
+          "type": "CodeHook"
+        },
+        "sampleUtterances": [
+          "Book an appointment",
+          "Schedule an appointment",
+          "Schedule appointment",
+          "Make appointment",
+          "Book vaccination",
+          "Schedule vaccine",
+          "Schedule"
+        ],
+        "slots": [
+          {
+            "sampleUtterances": [],
+            "slotType": "VirusContactType",
+            "slotTypeVersion": "1",
+            "obfuscationSetting": "NONE",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "In the past 14 days, have you been in close contact with anyone who tested positive for COVID-19?"
+                }
+              ],
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[{\"subTitle\":\"Covid Contact\",\"title\":\"Q2\",\"buttons\":[{\"text\":\"Yes\",\"value\":\"no\"},{\"text\":\"No\",\"value\":\"no\"}]}]}",
+              "maxAttempts": 2
+            },
+            "priority": 4,
+            "defaultValueSpec": {
+              "defaultValueList": []
+            },
+            "name": "ContactResult"
+          },
+          {
+            "sampleUtterances": [],
+            "slotType": "CurrentConditionType",
+            "slotTypeVersion": "1",
+            "obfuscationSetting": "NONE",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "Do you currently have fever, chills, cough, shortness of breath, difficulty breathing, fatigue, muscle or body aches, headache, new loss of taste or smell, sore throat, nausea, vomiting, or diarrhea?"
+                }
+              ],
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[{\"subTitle\":\"Current Health Condition\",\"title\":\"Q3\",\"buttons\":[{\"text\":\"Yes\",\"value\":\"yes\"},{\"text\":\"No\",\"value\":\"no\"}]}]}",
+              "maxAttempts": 2
+            },
+            "priority": 5,
+            "defaultValueSpec": {
+              "defaultValueList": []
+            },
+            "name": "CurrentCondition"
+          },
+          {
+            "sampleUtterances": [],
+            "slotType": "AMAZON.DATE",
+            "obfuscationSetting": "NONE",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "When should I schedule your appointment?"
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "When should I schedule your {AppointmentType}?"
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "{Time} on what day?"
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "A {AppointmentType} will take about [ExpectedDuration] minutes. What day works best for you?"
+                }
+              ],
+              "maxAttempts": 2
+            },
+            "priority": 6,
+            "name": "Date",
+            "description": "The date to schedule the appointment"
+          },
+          {
+            "sampleUtterances": [],
+            "slotType": "AMAZON.Person",
+            "obfuscationSetting": "NONE",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "What is your first and last name?"
+                }
+              ],
+              "maxAttempts": 2
+            },
+            "priority": 2,
+            "name": "FullName"
+          },
+          {
+            "sampleUtterances": [],
+            "slotType": "VirusResultType",
+            "slotTypeVersion": "1",
+            "obfuscationSetting": "NONE",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "In the past 14 days, have you tested positive for COVID-19?"
+                }
+              ],
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[{\"subTitle\":\"Covid Test\",\"title\":\"Q1\",\"buttons\":[{\"text\":\"Yes\",\"value\":\"yes\"},{\"text\":\"No\",\"value\":\"no\"}]}]}",
+              "maxAttempts": 2
+            },
+            "priority": 3,
+            "defaultValueSpec": {
+              "defaultValueList": []
+            },
+            "name": "Result"
+          },
+          {
+            "sampleUtterances": [],
+            "slotType": "AMAZON.TIME",
+            "obfuscationSetting": "NONE",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "At what time should I schedule your appointment?"
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "At what time do you want to schedule the {AppointmentType}?"
+                },
+                {
+                  "contentType": "PlainText",
+                  "content": "At what time on {Date}?"
+                }
+              ],
+              "maxAttempts": 2
+            },
+            "priority": 7,
+            "name": "Time",
+            "description": "The time to schedule the appointment"
+          },
+          {
+            "sampleUtterances": ["I would like a {VaccineType} vaccine"],
+            "slotType": "VaccineTypeValue",
+            "slotTypeVersion": "1",
+            "obfuscationSetting": "DEFAULT_OBFUSCATION",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+              "messages": [
+                {
+                  "contentType": "PlainText",
+                  "content": "Sure thing! What type of vaccine appointment would you like to schedule?"
+                }
+              ],
+              "responseCard": "{\"version\":1,\"contentType\":\"application/vnd.amazonaws.card.generic\",\"genericAttachments\":[]}",
+              "maxAttempts": 2
+            },
+            "priority": 1,
+            "defaultValueSpec": {
+              "defaultValueList": []
+            },
+            "name": "VaccineType",
+            "description": "The type of appointment being scheduled"
+          }
+        ],
+        "confirmationPrompt": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "{Date} at {Time} is available, should I go ahead and book your appointment?"
+            },
+            {
+              "contentType": "PlainText",
+              "content": "[formattedTime] is available, should I go ahead and book your {AppointmentType}?"
+            }
+          ],
+          "maxAttempts": 2
+        },
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-west-2:673671831874:function:LexMakeAppointmentCodeHook",
+          "messageVersion": "1.0"
+        },
+        "inputContexts": [],
+        "outputContexts": []
+      },
+      {
+        "name": "ConfirmAppointment",
+        "version": "3",
+        "fulfillmentActivity": {
+          "type": "ReturnIntent"
+        },
+        "sampleUtterances": [
+          "what date appointment",
+          "when appointment",
+          "whens appointment",
+          "confirm appointment",
+          "whens my appointment"
+        ],
+        "slots": [],
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-west-2:673671831874:function:LexMakeAppointmentCodeHook",
+          "messageVersion": "1.0"
+        },
+        "inputContexts": []
+      },
+      {
+        "name": "CancelScheduling",
+        "version": "2",
+        "fulfillmentActivity": {
+          "type": "ReturnIntent"
+        },
+        "sampleUtterances": [],
+        "slots": [],
+        "parentIntentSignature": "AMAZON.CancelIntent",
+        "conclusionStatement": {
+          "messages": [
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "At anytime you want to resume scheduling, say \"Schedule appointment\""
+            },
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "Okay. You can continue scheduling anytime, just text \"Schedule appointment\"."
+            }
+          ]
+        }
+      },
+      {
+        "name": "Greeting",
+        "version": "1",
+        "fulfillmentActivity": {
+          "type": "ReturnIntent"
+        },
+        "sampleUtterances": ["Hi", "Hello", "Hey"],
+        "slots": [],
+        "conclusionStatement": {
+          "messages": [
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "Hey! How can I assist you today?"
+            },
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "Hey! How can I help you today?"
+            },
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "Hi there! How can I assist you today?"
+            }
+          ]
+        },
+        "dialogCodeHook": {
+          "uri": "arn:aws:lambda:us-west-2:673671831874:function:LexMakeAppointmentCodeHook",
+          "messageVersion": "1.0"
+        },
+        "inputContexts": [],
+        "outputContexts": []
+      },
+      {
+        "name": "ThankYou",
+        "version": "1",
+        "fulfillmentActivity": {
+          "type": "ReturnIntent"
+        },
+        "sampleUtterances": ["thanks", "thank you"],
+        "slots": [],
+        "conclusionStatement": {
+          "messages": [
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "No problem!"
+            },
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "You're welcome!"
+            },
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "No worries!"
+            }
+          ]
+        }
+      },
+      {
+        "name": "AskKendraFAQ",
+        "version": "1",
+        "fulfillmentActivity": {
+          "type": "ReturnIntent"
+        },
+        "sampleUtterances": [],
+        "slots": [],
+        "parentIntentSignature": "AMAZON.KendraSearchIntent",
+        "conclusionStatement": {
+          "messages": [
+            {
+              "groupNumber": 1,
+              "contentType": "PlainText",
+              "content": "I found a FAQ question for you: ((x-amz-lex:kendra-search-response-question_answer-question-1)) and the answer is ((x-amz-lex:kendra-search-response-question_answer-answer-1))."
+            }
+          ]
+        },
+        "kendraConfiguration": {
+          "kendraIndex": "arn:aws:kendra:us-west-2:673671831874:index/11de5eb9-aede-473b-8354-45f222f3e4f4",
+          "queryFilterString": "",
+          "role": "arn:aws:iam::673671831874:role/aws-service-role/lex.amazonaws.com/AWSServiceRoleForLexBots"
+        }
+      }
+    ],
+    "slotTypes": [
+      {
+        "description": "contact with anyone with virus",
+        "name": "VirusContactType",
+        "version": "1",
+        "enumerationValues": [
+          {
+            "value": "no",
+            "synonyms": ["negative"]
+          },
+          {
+            "value": "yes",
+            "synonyms": ["yeah", "positive"]
+          }
+        ],
+        "valueSelectionStrategy": "TOP_RESOLUTION"
+      },
+      {
+        "description": "current condition",
+        "name": "CurrentConditionType",
+        "version": "1",
+        "enumerationValues": [
+          {
+            "value": "no",
+            "synonyms": ["negative"]
+          },
+          {
+            "value": "yes",
+            "synonyms": ["positive"]
+          }
+        ],
+        "valueSelectionStrategy": "TOP_RESOLUTION"
+      },
+      {
+        "description": "tested positive for virus",
+        "name": "VirusResultType",
+        "version": "1",
+        "enumerationValues": [
+          {
+            "value": "no",
+            "synonyms": ["negative"]
+          },
+          {
+            "value": "yes",
+            "synonyms": ["positive"]
+          }
+        ],
+        "valueSelectionStrategy": "TOP_RESOLUTION"
+      },
+      {
+        "description": "Vaccine appointment type",
+        "name": "VaccineTypeValue",
+        "version": "1",
+        "enumerationValues": [
+          {
+            "value": "covid vaccine",
+            "synonyms": ["covid"]
+          }
+        ],
+        "valueSelectionStrategy": "TOP_RESOLUTION"
+      }
+    ],
+    "voiceId": "Ivy",
+    "childDirected": false,
+    "locale": "en-US",
+    "idleSessionTTLInSeconds": 300,
+    "description": "Bot to answer Kendra FAQ",
+    "clarificationPrompt": {
+      "messages": [
+        {
+          "contentType": "PlainText",
+          "content": "Sorry, can you please repeat that?"
+        }
+      ],
+      "maxAttempts": 3
+    },
+    "abortStatement": {
+      "messages": [
+        {
+          "contentType": "PlainText",
+          "content": "Sorry, I am not able to assist at this time"
+        }
+      ]
+    },
+    "detectSentiment": true,
+    "nluIntentConfidenceThreshold": 0.2,
+    "enableModelImprovements": true
+  }
+}
