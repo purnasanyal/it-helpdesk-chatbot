@@ -1,10 +1,7 @@
 # **Automating IT Help Desk with Self-Service Chatbot and WhatsApp API and Twilio Flex**
-![image](https://user-images.githubusercontent.com/40875938/133207274-b0d401dd-7a1a-407f-9b2e-7217a9f1206e.png)
 
-
-# **Improve Call Center productivity with life-like conversational Chatbot**
 ## **Objective:** 
-The purpose of the document is to build applications with highly engaging user experiences and lifelike conversational interactions using Amazon Chatbot to increase contact center productivity, automate simple tasks, and drive operational efficiencies across the enterprise with Twilio WhatsApp Business API, SMS and Flex.
+The purpose of the document is to improve Call Center productivity by building applications with highly engaging user experiences and lifelike conversational interactions using Amazon Chatbot to increase contact center productivity, automate simple tasks, and drive operational efficiencies across the enterprise with Twilio WhatsApp Business API, SMS and Flex. with life-like conversational Chatbot
 
 ## **High Level steps**
 1. ### Sign up or log in  [Twilio](https://www.twilio.com/console) Account and get a Twilio Phone number
