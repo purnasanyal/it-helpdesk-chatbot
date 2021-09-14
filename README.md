@@ -50,7 +50,7 @@ Click “Launch Stack” Button and deploy the application:
 
 ![image](https://user-images.githubusercontent.com/40875938/133193922-9d5fc723-e8ea-40ea-b3c3-ad5170fcad3c.png)
 
-- Click “Template is ready” and “Amazon S3 URL”. Provide Amazon S3 URL path of  WhatsApp.yaml template
+- Click “Template is ready” and “Amazon S3 URL”. Provide Amazon S3 URL path of  iThelpdesk.yaml template
 - Provide a stack name e.g. “ps-twilio”
 - Replace the “S3BucketName” parameters with the S3 bucket you created in step 5. Leave other parameter value as the default value and create CloudFormation stack.
 - The stack creation may take up to 10 min
