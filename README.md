@@ -26,7 +26,7 @@ Set up your WhatsApp Sandbox:   Navigate to the [WhatsApp Sandbox](https://www.
 ##
 3. ### Clone the [git repository](https://github.com/purnasanyal/WhatsApp.git) in your local laptop or desktop
 
-git clone <https://github.com/purnasanyal/WhatsApp.git>
+git clone <https://github.com/purnasanyal/it-helpdesk.git>
 
 4. ### Sign Up for an [AWS Account](https://docs.aws.amazon.com/lexv2/latest/dg/gs-account.html), create IAM user and Provide IAM admin role
 
