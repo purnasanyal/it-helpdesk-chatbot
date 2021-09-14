@@ -1,0 +1,578 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A Cloudformation template to create Lex, Kendra and Lambda resources. 
+
+Parameters:
+  
+  FlexCode:
+    Description: Copy the Twilio Sandbox for WhatsApp Participants Code for Flex Project
+    Type: String
+    Default: join green-bad
+  
+  S3BucketName:
+    AllowedPattern: ^[a-z0-9][a-z0-9-.]*$
+    Description: The name of the S3 bucket which has the Lex and Kendra docs for syncing
+    Type: String
+    Default: ps-twilio-whatsapp1
+  
+  BotName:
+    Description: >
+      Name of an existing Lex Bot to be used by the web ui. NOTE: You must
+      also enter your published bot alias in the BotAlias field below.
+    Type: String
+    Default: LexKendraFAQBot
+    MinLength: 0
+    MaxLength: 50
+    AllowedPattern: "(^$|^[a-zA-Z]+((_[a-zA-Z]+)*|([a-zA-Z]+_)*|_))"
+    ConstraintDescription: >
+      Must conform with the permitted Lex Bot name pattern.
+  LexBotJSONKey:
+    AllowedPattern: ^.*.json$
+    Description: JSON configuration of the Lex bot
+    Type: String
+    Default: lex_bot/sample_lex_bot.json 
+  BotAlias:
+    Description: >
+      WARNING: For production deployments, use your bot's published alias here.
+      The $LATEST alias should only be used for manual testing. Amazon Lex limits
+      the number of runtime requests that you can make to the $LATEST version of
+      the bot.
+    Type: String
+    Default: "$LATEST"
+    MinLength: 2
+    MaxLength: 50
+    AllowedPattern: "(^$|^[$a-zA-Z]+((_[$a-zA-Z]+)*|([$a-zA-Z]+_)*|_))"
+    ConstraintDescription: >
+      Must conform with the permitted Lex Alias name pattern.  
+     
+
+  KendraIndexName:
+    Description: The name of the Kendra Index
+    Type: String
+    Default: Lex-Kendra-Bot-Index
+  KendraDataSourceName:
+    Description: The name of sata source for the Kendra Index
+    Type: String
+    Default: lex-kendra-bot-data-source
+  KendraFAQName:
+    Description: The name of FAQs for the Kendra Index
+    Type: String
+    Default: lex-kendra-bot-faqs
+  KendraFAQFileKey:
+    AllowedPattern: ^.*.csv$
+    Description: The file where FAQs are stored for the Kendra Index
+    Type: String
+    Default: faq/covid-faq.csv
+  
+  LambdaFunctionARN:
+    Description: Fulfillment lambda arn (optional)
+    Type: String
+    
+
+Resources:
+  KendraIndexIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - kendra.amazonaws.com
+                - s3.amazonaws.com
+            Action:
+              - sts:AssumeRole
+  KendraIndexIAMPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Join
+        - ""
+        - - !Ref "KendraIndexIAMRole"
+          - _policy
+      Roles:
+        - Ref: KendraIndexIAMRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+            Resource:
+              - arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+              - "s3:GetObject"
+              - "s3:ListBucket"
+              - "s3:HeadBucket"
+            Resource:
+              - "arn:aws:s3:*:*:accesspoint/*"
+              - !Sub "arn:aws:s3:::${S3BucketName}"
+              - !Sub "arn:aws:s3:::${S3BucketName}/*"
+          - Effect: Allow
+            Action:
+              - "kendra:DeleteIndex"
+              - "kendra:CreateDataSource"
+              - "kendra:DescribeIndex"
+              - "kendra:CreateIndex"
+              - "kendra:StartDataSourceSyncJob"
+              - "kendra:CreateFaq"
+              - "kendra:TagResource"
+              - "kendra:UntagResource"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - "iam:GetRole"
+              - "iam:PassRole"
+            Resource:
+              - !GetAtt KendraIndexIAMRole.Arn
+          - Effect: Allow
+            Action:
+              - "lambda:InvokeFunction"
+              - "lambda:AddPermission"
+              - "lambda:RemovePermission"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - "events:PutRule"
+              - "events:DeleteRule"
+              - "events:PutTargets"
+              - "events:RemoveTargets"
+            Resource:
+              - "*"
+  KendraIndex:
+    Type: AWS::Kendra::Index
+    Properties:
+      Description: "This is a demo kendra index..."
+      Edition: "DEVELOPER_EDITION"
+      Name: !Ref KendraIndexName
+      RoleArn: !GetAtt KendraIndexIAMRole.Arn
+  KendraFaq:
+    Type: AWS::Kendra::Faq
+    Properties:
+      Description: "This is a demo kendra FAQ. Please find the FAQ CSV in S3..."
+      FileFormat: CSV
+      IndexId: !Ref KendraIndex
+      Name: !Ref KendraFAQName
+      RoleArn: !GetAtt KendraIndexIAMRole.Arn
+      S3Path:
+        Bucket: !Ref S3BucketName
+        Key: !Ref KendraFAQFileKey
+  LexSLRole:
+    Type: AWS::IAM::ServiceLinkedRole
+    Properties:
+      AWSServiceName: lex.amazonaws.com
+      Description: Amazon Lex Service Lined Role
+
+  LexBotIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lex.amazonaws.com
+                - kendra.amazonaws.com
+                - s3.amazonaws.com
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  LexBotIAMPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Join
+        - ""
+        - - !Ref "LexBotIAMRole"
+          - _policy
+      Roles:
+        - Ref: LexBotIAMRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+            Resource:
+              - arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+              - "s3:GetObject"
+              - "s3:ListBucket"
+              - "s3:HeadBucket"
+            Resource:
+              - !Sub "arn:aws:s3:::${S3BucketName}"
+              - "arn:aws:s3:*:*:accesspoint/*"
+              - !Sub "arn:aws:s3:::${S3BucketName}/*"
+          - Effect: Allow
+            Action:
+              - "lex:DeleteBot"
+              - "lex:DeleteSlotTypeVersion"
+              - "lex:GetBuiltinSlotTypes"
+              - "lex:GetSlotType"
+              - "lex:PutBot"
+              - "lex:PutSlotType"
+              - "lex:GetBot"
+              - "lex:GetSlotTypes"
+              - "lex:DeleteSlotType"
+              - "lex:DeleteIntent"
+              - "lex:GetIntent"
+              - "lex:PutIntent"
+              - "lex:GetBotAliases"
+              - "lex:DeleteIntentVersion"
+              - "lex:GetBuiltinIntents"
+              - "lex:GetBuiltinIntent"
+              - "lex:DeleteBotAlias"
+              - "lex:GetBots"
+              - "lex:GetSlotTypeVersions"
+              - "lex:CreateSlotTypeVersion"
+              - "lex:DeleteBotVersion"
+              - "lex:GetIntentVersions"
+              - "lex:GetIntents"
+              - "lex:GetBotVersions"
+              - "lex:CreateBotVersion"
+              - "lex:GetBotAlias"
+              - "lex:CreateIntentVersion"
+              - "lex:PutBotAlias"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - "iam:GetRole"
+              - "iam:PassRole"
+            Resource:
+              - !GetAtt LexBotIAMRole.Arn
+          - Effect: Allow
+            Action:
+              - "lambda:AddPermission"
+              - "lambda:RemovePermission"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - "events:PutRule"
+              - "events:DeleteRule"
+              - "events:PutTargets"
+              - "events:RemoveTargets"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - "kendra:Query"
+            Resource:
+              - "*"
+
+  TwilioPythonSdkHelperLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.7
+        - python3.8
+      Content:
+        S3Bucket: !Ref S3BucketName
+        S3Key: "lambda_layers/lambda_layer.zip"
+
+  LexBotLambda:
+    DependsOn:
+      - LexBotIAMPolicy
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 300
+      Role: !GetAtt LexBotIAMRole.Arn
+      MemorySize: 256
+      Handler: lex_custom_resource.lambda_handler
+      Layers: [!Ref TwilioPythonSdkHelperLayer]
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: "lex_custom_resource/lex_custom_resource.zip"
+      Description: Lambda backed Custom-Resource for Lex bot operations
+
+  LambdaFunctionIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - kendra.amazonaws.com
+                - lex.amazonaws.com
+                - s3.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+
+  LambdaFunctionIAMPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Join
+        - ""
+        - - !Ref "LambdaFunctionIAMRole"
+          - _policy
+      Roles:
+        - Ref: LambdaFunctionIAMRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+            Resource:
+              - arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+              - "s3:GetObject"
+              - "s3:ListBucket"
+              - "s3:HeadBucket"
+            Resource:
+              - "arn:aws:s3:*:*:accesspoint/*"
+              - !Sub "arn:aws:s3:::${S3BucketName}"
+              - !Sub "arn:aws:s3:::${S3BucketName}/*"
+          - Effect: Allow
+            Action:
+              - "lex:DeleteBot"
+              - "lex:DeleteSlotTypeVersion"
+              - "lex:GetBuiltinSlotTypes"
+              - "lex:GetSlotType"
+              - "lex:PutBot"
+              - "lex:PutSlotType"
+              - "lex:GetBot"
+              - "lex:GetSlotTypes"
+              - "lex:DeleteSlotType"
+              - "lex:DeleteIntent"
+              - "lex:GetIntent"
+              - "lex:PutIntent"
+              - "lex:DeleteIntentVersion"
+              - "lex:GetBuiltinIntents"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - "kendra:Query"
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - "iam:GetRole"
+              - "iam:PassRole"
+            Resource:
+              - !GetAtt LambdaFunctionIAMRole.Arn
+          - Effect: Allow
+            Action:
+              - "lambda:InvokeFunction"
+              - "lambda:AddPermission"
+              - "lambda:RemovePermission"
+            Resource:
+              - "*"
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref LambdaFunction
+      Principal: lex.amazonaws.com
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 300
+      Role: !GetAtt LambdaFunctionIAMRole.Arn
+      MemorySize: 256
+      Handler: lambda.lambda_handler
+      Layers: [!Ref TwilioPythonSdkHelperLayer]
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: lex-appointment-handler-it/lex-appointment-handler.zip
+      Environment:
+        Variables:
+            id: !Ref FlexCode
+
+  LexBot:
+    DependsOn:
+      - LambdaFunction
+    Type: Custom::LexBot
+    Properties:
+      ServiceToken: !GetAtt LexBotLambda.Arn
+      LexS3Bucket: !Ref S3BucketName
+      LexFileKey: !Ref LexBotJSONKey
+      LexBotName: !Ref BotName
+      FulfillmentLambda: !GetAtt LambdaFunction.Arn
+      KendraSearchRole: !GetAtt LexBotIAMRole.Arn
+      KendraIndex: !Ref KendraIndex
+      AccountID: !Sub "${AWS::AccountId}"
+
+ 
+  # API GATEWAY FOR WHATSAPP
+  CustomApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: TwilioApigwRestEndpoint
+  CustomApiGatewayWebhookResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref CustomApiGateway
+      ParentId: !GetAtt CustomApiGateway.RootResourceId
+      PathPart: webhook
+  CustomApigwLambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Path: "/"
+      ManagedPolicyArns:
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref AWS::Partition
+            - ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref AWS::Partition
+            - ":iam::aws:policy/AmazonLexFullAccess"
+  CustomApigwLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 300
+      Role: !GetAtt CustomApigwLambdaIAMRole.Arn
+      MemorySize: 256
+      Handler: lambda.lambda_handler
+      Layers: [!Ref TwilioPythonSdkHelperLayer]
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: twilio-webhook-lambda/twilio-webhook-lambda.zip
+      Environment:
+        Variables:
+          BOT_ALIAS: $LATEST
+          BOT_NAME: !Ref BotName
+
+  CustomLambdaPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref CustomApigwLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ""
+        - - "arn:"
+          - !Ref AWS::Partition
+          - ":execute-api:"
+          - !Ref AWS::Region
+          - ":"
+          - !Ref AWS::AccountId
+          - ":"
+          - !Ref CustomApiGateway
+          - "/*/POST/webhook"
+
+  CustomWebhookPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: POST
+      ResourceId: !Ref CustomApiGatewayWebhookResource
+      RestApiId: !Ref CustomApiGateway
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomApigwLambda.Arn}/invocations
+        RequestTemplates:
+          application/x-www-form-urlencoded: |
+            {
+                "data": {
+                    #foreach( $token in $input.path('$').split('&') )
+                        #set( $keyVal = $token.split('=') )
+                        #set( $keyValSize = $keyVal.size() )
+                        #if( $keyValSize >= 1 )
+                            #set( $key = $util.urlDecode($keyVal[0]) )
+                            #if( $keyValSize >= 2 )
+                                #set( $val = $util.urlDecode($keyVal[1]) )
+                            #else
+                                #set( $val = '' )
+                            #end
+                            "$key": "$val"#if($foreach.hasNext),#end
+                        #end
+                    #end
+                }
+            }
+        IntegrationResponses:
+          - ResponseTemplates:
+              application/xml: "$input.path('$')"
+            StatusCode: 200
+      MethodResponses:
+        - ResponseModels:
+            application/xml: Empty
+          StatusCode: 200
+  CustomApiGatewayStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref CustomApiGatewayDeployment
+      Description: Lambda API Stage v0
+      RestApiId: !Ref CustomApiGateway
+      StageName: "prod"
+  CustomApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: CustomWebhookPostMethod
+    Properties:
+      Description: Lambda API Deployment
+      RestApiId: !Ref CustomApiGateway
+  ApiGatewayIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ""
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: LambdaAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "lambda:*"
+                Resource: !GetAtt CustomApigwLambda.Arn
+
+Outputs:
+  LexBotName:
+    Description: Lex Bot Name
+    Value: !GetAtt LexBot.BotName
+  KendraIndex:
+    Description: Kendra Index
+    Value: !Ref KendraIndex
+  CustomWebhookHandlerEndpoint:
+    Value: !Join
+      - ""
+      - - "https://"
+        - !Ref CustomApiGateway
+        - ".execute-api."
+        - !Ref AWS::Region
+        - "."
+        - !Ref AWS::URLSuffix
+        - "/prod/webhook"
